@@ -1,0 +1,37 @@
+# depslib dependency file v1.0
+1781338032 source:/home/david/Documents/Cpp/minecraft/status.cpp
+
+1781632387 source:/home/david/Documents/Cpp/minecraft/main.cpp
+	<iostream>
+	<string>
+	<vector>
+	<cstring>
+	<unistd.h>
+	<sys/socket.h>
+	<netinet/in.h>
+	<arpa/inet.h>
+	"types.h"
+	"protocol.h"
+
+1781632503 source:/home/david/Documents/Cpp/minecraft/protocol.cpp
+	"protocol.h"
+	"types.h"
+	<unistd.h>
+
+1781800391 /home/david/Documents/Cpp/minecraft/protocol.h
+	<string>
+	<vector>
+	<cstdint>
+
+1781462706 source:/home/david/Documents/Cpp/minecraft/types.cpp
+	"types.h"
+	<sys/socket.h>
+	<unistd.h>
+
+1781632404 /home/david/Documents/Cpp/minecraft/types.h
+	<vector>
+	<string>
+	<cstdint>
+
+1781632062 source:/home/david/Documents/Cpp/minecraft/users.cpp
+
