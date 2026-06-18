@@ -38,7 +38,7 @@ std::string disconnect_json = "{\"text\": \"§cTento server slouží pouze jako 
 
 // 2. Sestavíme tělo paketu [ID] [String]
 std::vector<uint8_t> packet_body;
-VarIntw(packet_body, 0x00); // LOGIN Disconnect má ID 0x00
+VarIntw(packet_body, toClient["login"]["disconnect"]); // LOGIN Disconnect má ID 0x00
 writeString(packet_body, disconnect_json); // Naše pomocná funkce pro zápis Stringu
 
 // 3. Sestavíme finální paket [Délka] [Tělo]

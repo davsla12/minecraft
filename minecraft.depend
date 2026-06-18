@@ -18,10 +18,11 @@
 	"types.h"
 	<unistd.h>
 
-1781800391 /home/david/Documents/Cpp/minecraft/protocol.h
+1781802878 /home/david/Documents/Cpp/minecraft/protocol.h
 	<string>
 	<vector>
 	<cstdint>
+	"mapping.h"
 
 1781462706 source:/home/david/Documents/Cpp/minecraft/types.cpp
 	"types.h"
@@ -34,4 +35,8 @@
 	<cstdint>
 
 1781632062 source:/home/david/Documents/Cpp/minecraft/users.cpp
+
+1781802878 /home/david/Documents/Cpp/minecraft/mapping.h
+	<map>
+	<string>
 

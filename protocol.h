@@ -5,6 +5,8 @@
 #include <vector>
 #include <cstdint>
 
+#include "mapping.h"
+
 struct packet{
   int id;
   std::vector<uint8_t> data;

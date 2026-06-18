@@ -33,9 +33,10 @@
 			<Add option="-fexceptions" />
 		</Compiler>
 		<Unit filename="main.cpp" />
+		<Unit filename="mapping.cpp" />
+		<Unit filename="mapping.h" />
 		<Unit filename="protocol.cpp" />
 		<Unit filename="protocol.h" />
-		<Unit filename="status.cpp" />
 		<Unit filename="types.cpp" />
 		<Unit filename="types.h" />
 		<Unit filename="users.cpp" />
