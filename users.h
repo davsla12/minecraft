@@ -7,11 +7,11 @@
 
 struct User{
 int fd;
-sockaddr_in addr_IP;
+std::string username;
 std::string addr;
-State = HANDSHAKE;
-}
+State state = HANDSHAKE;
+};
 
-std::vector<User> Users;
+int Users_getfd(User* retval,int fd);
 
 #endif

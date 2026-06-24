@@ -13,9 +13,9 @@ PLAY
 };
 
 void VarIntw(std::vector<uint8_t>& buffer, int value);
-int VarIntr(int client_fd);
+int VarIntr(int client_fd,int& retval);
 
 void writeString(std::vector<uint8_t>& buffer, const std::string& str);
-std::string Stringr(int client_fd);
+int Stringr(int client_fd,std::string& retval);
 
 #endif

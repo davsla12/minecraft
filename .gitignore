@@ -1,4 +1,5 @@
 .venv/
 obj/
 bin/
+build/
 *.out

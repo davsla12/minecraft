@@ -13,7 +13,7 @@
 	"types.h"
 	"protocol.h"
 
-1781632503 source:/home/david/Documents/Cpp/minecraft/protocol.cpp
+1781802705 source:/home/david/Documents/Cpp/minecraft/protocol.cpp
 	"protocol.h"
 	"types.h"
 	<unistd.h>
@@ -39,4 +39,7 @@
 1781802878 /home/david/Documents/Cpp/minecraft/mapping.h
 	<map>
 	<string>
+
+1781802814 source:/home/david/Documents/Cpp/minecraft/mapping.cpp
+	"mapping.h"
 

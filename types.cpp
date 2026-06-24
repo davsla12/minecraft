@@ -15,7 +15,7 @@ void VarIntw(std::vector<uint8_t>& buffer, int value) {
   }
 }
 
-int VarIntr(int client_fd) {
+int VarIntr(int client_fd,int& retval) {
     uint32_t result = 0;
     int numRead = 0;
     uint8_t readByte;
@@ -38,12 +38,13 @@ int VarIntr(int client_fd) {
 
         // Pojistka proti poškozeným datům (VarInt má max 5 bajtů)
         if (numRead > 5) {
-            return -1;
+            return -2;
         }
 
     } while ((readByte & 0x80) != 0); // Opakuj, pokud pokračovací bit je 1
 
-    return static_cast<int>(result);
+    retval = static_cast<int>(result);
+    return 0;
 }
 
 void writeString(std::vector<uint8_t>& buffer, const std::string& str) {
@@ -51,15 +52,14 @@ void writeString(std::vector<uint8_t>& buffer, const std::string& str) {
   buffer.insert(buffer.end(), str.begin(), str.end());
 }
 
-std::string Stringr(int client_fd) {
-    int size = VarIntr(client_fd);
-    if (size <= 0) {
-        return "";
-    }
-    std::string retval(size, '\0');
+int Stringr(int client_fd,std::string& retval) {
+    int size;
+    if(VarIntr(client_fd,size)<=0)return -1;
+    std::string tmpretval(size, '\0');
     ssize_t bytes_received = read(client_fd, &retval[0], size);
     if (bytes_received < size) {
-        return "";
+        return -2;
     }
-    return retval;
+    retval = tmpretval;
+    return 0;
 }

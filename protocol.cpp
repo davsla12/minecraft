@@ -1,62 +1,54 @@
 #include "protocol.h"
 #include "types.h"
+#include "users.h"
+
 #include <unistd.h>
+#include <iostream>
 
-handshake_t handshakef(int fd){
-  VarIntr(fd);//packet size
-  handshake_t retval;
-  retval.packetID = VarIntr(fd);
-  retval.version = VarIntr(fd);
-  retval.addr = Stringr(fd);
-  read(fd,&retval.port,sizeof(retval.port));
-  retval.nextstate = VarIntr(fd);
-  return retval;
-};
+int packet_r(int fd){
+  int size;
+  User user;
+  Packet* packet = (Packet*)malloc(sizeof(Packet));
+  packet->fd=fd;
+  Users_getfd(&user,fd);
+  if(VarIntr(fd,size)<0)return -1;
+  if(VarIntr(fd,packet->id)<0)return -1;
+  if(Users_getfd(&user,fd)<0)return -2;
+  switch(user.state){
+    case HANDSHAKE:
+      switch(packet->id){
+        case HANDSHAKING_TOSERVER_SET_PROTOCOL:
+          packet->data = malloc(sizeof(handshake_t));
+          if(packet_handshake(fd,(handshake_t*)packet->data)<0)goto exit;
+          if (((handshake_t*)packet->data)->nextstate == 1){
+            user.state = STATUS;
+          }
+          else if(((handshake_t*)packet->data)->nextstate == 2){
+            user.state = LOGIN;
+          }
+          else goto exit;
+          std::cout << user.state << std::endl;
 
-void server_status(int fd){
-  std::string json_response = R"({
-    "version": { "name": "C++ TCP 2026", "protocol": 47 },
-    "players": { "max": 10, "online": 1, "sample": [ { "name": "Test", "id":
-    "00000000-0000-0000-0000-000000000000" } ] },
-    "description": { "text": "§eAhoj! §fTohle bezi na cistem TCP!" }
-  })";
+          break;
+      }break;
+    case STATUS:
+      switch(packet->id){
+        case 0:
+          break;
+      }
+  }
 
-  std::vector<uint8_t> packet_data;
-  VarIntw(packet_data, 0x00); // Packet ID pro Status Response je 0x00
-  writeString(packet_data, json_response);
-
-  std::vector<uint8_t> final_packet;
-  VarIntw(final_packet, packet_data.size());
-  final_packet.insert(final_packet.end(), packet_data.begin(), packet_data.end());
-
-  write(fd, final_packet.data(), final_packet.size());
+  return 0;
+  exit:
+  free(packet->data);
+  free(packet);
+  return -1;
 }
 
-void disconnect(int fd){
-// 1. Připravíme si JSON text zprávy
-std::string disconnect_json = "{\"text\": \"§cTento server slouží pouze jako info panel!\\n§7Nelze se realně připojit.\"}";
-
-// 2. Sestavíme tělo paketu [ID] [String]
-std::vector<uint8_t> packet_body;
-VarIntw(packet_body, toClient["login"]["disconnect"]); // LOGIN Disconnect má ID 0x00
-writeString(packet_body, disconnect_json); // Naše pomocná funkce pro zápis Stringu
-
-// 3. Sestavíme finální paket [Délka] [Tělo]
-std::vector<uint8_t> final_packet;
-VarIntw(final_packet, packet_body.size());
-final_packet.insert(final_packet.end(), packet_body.begin(), packet_body.end());
-
-// 4. Odešleme klientovi přímo do socketu
-write(fd, final_packet.data(), final_packet.size());
-}
-
-void success(int fd){
-std::vector<uint8_t> packet_body;
-VarIntw(packet_body, 0x02);
-writeString(packet_body,"00000000-0000-0000-0000-000000000000");
-writeString(packet_body,"davsla12");
-std::vector<uint8_t> final_packet;
-VarIntw(final_packet,packet_body.size());
-final_packet.insert(final_packet.end(), packet_body.begin(), packet_body.end());
-write(fd, final_packet.data(), final_packet.size());
+int packet_handshake(int fd,handshake_t* retval){
+  if(VarIntr(fd,retval->version)<0)return -1;
+  if(Stringr(fd,retval->addr)<0)return -1;
+  read(fd,&retval->port,2);
+  if(VarIntr(fd,retval->nextstate)<0)return -1;
+  return 0;
 }
