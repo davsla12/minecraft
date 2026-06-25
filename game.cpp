@@ -1,5 +1,6 @@
 #include "game.h"
 #include "users.h"
+#include "network.h"
 
 #include <chrono>
 #include <thread>
@@ -16,36 +17,60 @@ std::queue<Packet> Event2;
 
 std::queue<Packet>* Events;
 
-std::chrono::milliseconds TICK_TIME(50);
+std::chrono::milliseconds TICK_TIME(1000);
 
-int Game_AddEvent(Packet* packet){
-
-  return 0;
-}
-
-void Game_tick(){
+int Game_AddEvent(Packet packet){
   Eventb_mtx.lock();
-  Eventb = !Eventb;
-  Eventb_mtx.unlock();
-  if(Eventb){
+  if(!Eventb){
+    std::cout << "Event dan do 1" << std::endl;
     Event1_mtx.lock();
     Events = &Event1;
   }
   else{
     Event2_mtx.lock();
     Events = &Event2;
+    std::cout << "Event dan do 2" << std::endl;
   }
+  Events->push(packet);
+  Eventb_mtx.unlock();
+  if(!Eventb){
+    Event1_mtx.unlock();
+  }
+  else{
+    Event2_mtx.unlock();
+  }
+  return 0;
+}
+
+void Game_tick(){
+  Eventb_mtx.lock();
+  Eventb = !Eventb;
+  if(Eventb){
+    Event1_mtx.lock();
+    Events = &Event1;
+    std::cout << "tick 1" << std::endl;
+  }
+  else{
+    Event2_mtx.lock();
+    Events = &Event2;
+    std::cout << "tick 2" << std::endl;
+  }
+  Eventb_mtx.unlock();
 
   while(!Events->empty()){
+    std::cout << "Zpracovani eventu" << std::endl;
     Packet event = Events->front();
+    Packet respons;
     Events->pop();
     User user;
     Users_getfd(&user,event.fd);
     switch(user.state){
-
+      case HANDSHAKE:
+        respons = packet_server_info(event.fd);
     }
+    free(event.data);
+    Network_Add(respons);
   }
-
   if(Eventb){
     Event1_mtx.unlock();
   }

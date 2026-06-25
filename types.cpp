@@ -1,7 +1,7 @@
 #include "types.h"
 #include <sys/socket.h>
 #include <unistd.h>
-
+#include <iostream>
 
 void VarIntw(std::vector<uint8_t>& buffer, int value) {
   uint32_t u_value = static_cast<uint32_t>(value);
@@ -27,6 +27,7 @@ int VarIntr(int client_fd,int& retval) {
 
         // Pokud klient zavřel spojení (0) nebo nastala chyba (-1)
         if (bytes_received <= 0) {
+          std::cout << "Nejsou data" << errno << std::endl;
             return -1; // Vrátíme -1 jako signál chyby/odpojení
         }
 
@@ -38,6 +39,7 @@ int VarIntr(int client_fd,int& retval) {
 
         // Pojistka proti poškozeným datům (VarInt má max 5 bajtů)
         if (numRead > 5) {
+          std::cout << "Velky VarInt" << errno << std::endl;
             return -2;
         }
 
@@ -52,14 +54,28 @@ void writeString(std::vector<uint8_t>& buffer, const std::string& str) {
   buffer.insert(buffer.end(), str.begin(), str.end());
 }
 
-int Stringr(int client_fd,std::string& retval) {
+int Stringr(int client_fd, std::string& retval) {
     int size;
-    if(VarIntr(client_fd,size)<=0)return -1;
+
+    // 1. Načteme délku stringu (VarInt)
+    // Pozor: VarIntr vrací 0 při úspěchu a záporné číslo při chybě, proto < 0
+    if (VarIntr(client_fd, size) < 0) return -1;
+
+    // Pojistka proti nesmyslným délkám (např. záporná čísla nebo příliš dlouhý string)
+    if (size <= 0 || size > 32767) return -1;
+
+    // 2. Alokujeme dočasný string o přesné velikosti
     std::string tmpretval(size, '\0');
-    ssize_t bytes_received = read(client_fd, &retval[0], size);
+
+    // 3. Čteme přímo do paměti tohoto dočasného stringu
+    ssize_t bytes_received = read(client_fd, &tmpretval[0], size);
+
+    // Pokud jsme nepřečetli přesně tolik, kolik klient slíbil
     if (bytes_received < size) {
         return -2;
     }
+
+    // 4. Úspěch! Předáme naplněný string ven z funkce
     retval = tmpretval;
     return 0;
 }

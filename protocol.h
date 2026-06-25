@@ -11,6 +11,7 @@
 struct Packet{
   int id;
   int fd;
+  int size = 0;
   void* data = NULL;
 };
 int packet_r(int fd);
@@ -22,5 +23,5 @@ struct handshake_t{
   int nextstate;
 };
 int packet_handshake(int fd,handshake_t* retval);
-
+Packet packet_server_info(int fd);
 #endif

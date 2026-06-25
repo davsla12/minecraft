@@ -4,10 +4,40 @@
 
 #include <iostream>
 #include <cstring>
+#include <mutex>
 
 #define PORT 25565
 
 int server_fd;
+
+std::mutex Packets_mtx;
+std::vector<Packet> Packets;
+
+void Network_Add(Packet packet){
+  Packets_mtx.lock();
+  Packets.push_back(packet);
+  Packets_mtx.unlock();
+}
+
+void Network_send() {
+  Packets_mtx.lock();
+  for (auto p : Packets) {
+    std::cout << "Posilam" << std::endl;
+    std::vector<uint8_t> data;
+    VarIntw(data, p.id);
+    uint8_t* raw_bytes = static_cast<uint8_t*>(p.data);
+    if (raw_bytes != NULL && p.size > 0) {
+      data.insert(data.end(), raw_bytes, raw_bytes + p.size);
+    }
+    std::vector<uint8_t> final_data;
+    VarIntw(final_data, data.size());
+    final_data.insert(final_data.end(), data.begin(), data.end());
+    write(p.fd,final_data.data(),final_data.size());
+    free(p.data);
+  }
+  Packets.clear();
+  Packets_mtx.unlock();
+}
 
 void Network_Init(){
   // 1. Vytvoření socketu typu AF_INET (IPv4 internetový protokol) a SOCK_STREAM (TCP)
@@ -56,6 +86,7 @@ void Network_Run(){
     int fd_r;
     char buffer[1024];
   while ((fd_r = poll(fd_s.data(), fd_s.size(), 100)) >= 0) {
+      Network_send();
       if (fd_r == 0) {
           // Timeout - nikdo nic neposílá, můžeš pokračovat dál
           continue;
@@ -73,6 +104,10 @@ void Network_Run(){
                   int client_fd = accept(server_fd, NULL, NULL);
                   if (client_fd >= 0) {
                       std::cout << "Nový klient připojen! FD: " << client_fd << std::endl;
+                      User user;
+                      user.fd = client_fd;
+                      if(Users_getfd(NULL,client_fd)==0)std::cout << "uzivatel existuje" << std::endl;
+                      Users_add(user);
 
                       // Přidáme nového klienta do vektoru pro příští volání poll()
                       pollfd client_pollfd;
@@ -85,7 +120,7 @@ void Network_Run(){
 
               // PŘÍPAD B: Událost na klientském socketu -> Klient posílá data
               else {
-                  int bytes_received = recv(fd_s[i].fd, buffer, sizeof(buffer) - 1, 0);
+                  int bytes_received = 1;//recv(fd_s[i].fd, buffer, sizeof(buffer) - 1, 0);
 
                   if (bytes_received <= 0) {
                       // Klient se odpojil nebo nastala chyba
@@ -99,7 +134,14 @@ void Network_Run(){
                       // Úspěšně přijatá data
                       buffer[bytes_received] = '\0';
                       //std::cout << "Klient [" << fd_s[i].fd << "] píše: " << buffer << std::endl;
-                      packet_r(fd_s[i].fd);
+                      if(packet_r(fd_s[i].fd)<0){
+                        std::cout << "Klient na FD " << fd_s[i].fd << " se odpojil." << std::endl;
+                        Users_rem(fd_s[i].fd);
+                        close(fd_s[i].fd);
+
+                      // Vymažeme klienta z vektoru
+                        fd_s.erase(fd_s.begin() + i);
+                      }
                       // Zde můžeš klientovi odpovědět pomocí send()
                       // send(fd_s[i].fd, "OK\n", 3, 0);
                   }

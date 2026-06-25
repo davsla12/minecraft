@@ -11,5 +11,6 @@
 
 void Network_Init();
 void Network_Run();
+void Network_Add(Packet packet);
 
 #endif
